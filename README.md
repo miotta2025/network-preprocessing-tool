@@ -197,3 +197,44 @@ Esto generará los cuatro CSVs con análisis completos sobre `TCP_IP.pcap`, agru
 
 - El script maneja archivos grandes usando `chunks` de 200,000 líneas para no agotar la memoria.
 - Si `tshark` falla, revisad que esté correctamente instalado y que los campos usados estén disponibles en vuestro `.pcap`.
+
+# Análisis de Tráfico de Red a partir de PCAPs 
+
+El segundo script "preprocessing_tool_nprint.py", permite analizar archivos PCAP
+sin usar estadísticas. Para usarse se necesita compilar la herramienta nPrint. La versión original se puede encontrar en https://github.com/nprint/nprint. Nuestra versión es una modificada para soporte para ARP. 
+
+### Requisitos
+
+- Python 3.10 o superior
+- Dependencias de Python:
+
+```bash
+pip3 install pandas dpkt
+```
+
+Es necesario compilar nPrint para poder usarse, simplemente entre en ./nprint y ejecute:
+
+```bash
+make
+```
+
+## Uso
+
+```bash
+python3 preprocessing_tool_nprint.py [-h]
+                                    [--headers {ethernet,ipv4,ipv6,absolute_time,icmp,tcp,udp,relative_time,arp} [{ethernet,ipv4,ipv6,absolute_time,icmp,tcp,udp,relative_time,arp} ...]]
+                                    [--masks {ethernet,arp,ipv4,ipv6,tcp,udp,ip,icmp} [{ethernet,arp,ipv4,ipv6,tcp,udp,ip,icmp} ...]]
+                                    pcap_file
+```
+
+### Argumentos
+
+- `--headers`: Headers de los protocolos a incluir en el output.
+- `--masks`: Headers de los cuales eliminar información de localización.
+- `pcap_file`: Ruta del archivo `.pcap` a analizar.
+
+---
+
+## Salidas
+
+Una vez ejecutado, aparecerá un archivo en el mismo directorio que el PCAP original con el nombre: "nombre_archivo.pcap.csv".
