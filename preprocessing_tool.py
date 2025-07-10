@@ -13,8 +13,8 @@ parser = argparse.ArgumentParser(description="Analizar un archivo pcap con una v
 # Definir los argumentos
 parser.add_argument("pcap_file", type=str, help="Ruta del archivo pcap a analizar")
 parser.add_argument("--size_of_window", type=int, default=10, help="Tamaño de la ventana en paquetes (por defecto: 10)")
-parser.add_argument("--modo", type=str, choices=["combinada", "paquetes", "ventana", "flujos", "all"],
-                    default="all", help="Modo de análisis (combinada, paquetes, ventana, flujos, all). Por defecto: all")
+parser.add_argument("--mode", type=str, choices=["combinada", "paquetes", "ventana", "flujos", "all"],
+                    default="all", help="mode de análisis (combinada, paquetes, ventana, flujos, all). Por defecto: all")
 
 
 # Parsear los argumentos
@@ -23,14 +23,15 @@ args = parser.parse_args()
 # Definir variables
 host = '192.168.137.250'
 size_of_window = args.size_of_window
-modo = args.modo
+mode = args.mode
 pcap_file = args.pcap_file
 # Extraer el nombre base del archivo pcap sin la extensión
-pcap_base_name = os.path.splitext(pcap_file)[0]
+#pcap_base_name = os.path.splitext(pcap_file)[0]
 # Definir el nombre del CSV principal a partir del pcap
-output_base = f"{pcap_base_name}.csv"
+#output_base = f"{pcap_base_name}.csv"
 # Extraer el nombre base del archivo de salida sin la extensión
-output_base_name = os.path.splitext(output_base)[0]
+#output_base_name = os.path.splitext(output_base)[0]
+output_base_name = os.path.basename(pcap_file).replace(".pcap", "")
 
 # Generar nombres personalizados para los otros CSVs
 output_csv = f"paquetes_{output_base_name}.csv"
@@ -48,8 +49,8 @@ def run_tshark(pcap_file, output_csv):
         "-e", "ip.src", "-e", "ip.dst", "-e", "ip.proto", "-e", "frame.len", "-e", "tcp.flags",
         "-e", "tcp.srcport", "-e", "tcp.dstport", "-e", "tcp.len", "-e", "udp.length", "-e", "tcp.hdr_len",
         "-e", "udp.srcport", "-e", "udp.dstport", "-e", "eth.type", "-e", "llc.control",
-        "-e", "frame.time", "-e", "ip.ttl", "-e", "ip.hdr_len",
-        "-e", "tcp.analysis.initial_rtt", "-e", "tcp.connection.fin", "-e", "tcp.connection.syn", "-e", "tcp.flags.cwr", "-e", "tcp.flags.ecn",
+        "-e", "frame.time_epoch", "-e", "ip.ttl", "-e", "ip.hdr_len",
+        "-e", "tcp.analysis.initial_rtt", "-e", "tcp.connection.fin", "-e", "tcp.connection.syn", "-e", "tcp.flags.cwr", "-e", "tcp.flags.ece",
         "-e", "tcp.urgent_pointer", "-e", "ip.frag_offset", "-e", "eth.src_not_group",
         "-E", "header=y", "-E", "separator=,", "-E", "quote=d", "-E", "occurrence=f"
 
@@ -82,7 +83,7 @@ def process_windows(df, window_size=size_of_window):
     df['tcp_connection_fin'] = df['tcp.connection.fin']
     df['tcp_connection_syn'] = df['tcp.connection.syn']
     df['tcp_flags_cwr'] = df['tcp.flags.cwr']
-    df['tcp_flags_ecn'] = df['tcp.flags.ecn']
+    df['tcp_flags_ece'] = df['tcp.flags.ece']
     df['TCP_Urgent_Pointer'] = df['tcp.urgent_pointer'].astype(float)  # Puntero de datos urgentes en TCP  
      
 
@@ -98,12 +99,13 @@ def process_windows(df, window_size=size_of_window):
     df['ETH_Src_Not_Group'] = df['ETH_Src_Not_Group'].fillna(0)
 
     # Calcular la duración de la ventana (diferencia entre el primer y último timestamp de la ventana)
-    df['frame.time'] = pd.to_datetime(df['frame.time'])
+    #df['frame.time'] = pd.to_datetime(df['frame.time'])
+    df["frame.time_epoch"] = pd.to_datetime(df["frame.time_epoch"], unit="s")
     df['Window'] = df.index // window_size
 
     # Calcular la duración total de la ventana (diferencia entre el primer y último paquete)
-    df['window_start_time'] = df.groupby('Window')['frame.time'].transform('min')
-    df['window_end_time'] = df.groupby('Window')['frame.time'].transform('max')
+    df['window_start_time'] = df.groupby('Window')['frame.time_epoch'].transform('min')
+    df['window_end_time'] = df.groupby('Window')['frame.time_epoch'].transform('max')
     df['Duration'] = (df['window_end_time'] - df['window_start_time']).dt.total_seconds()
 
     # Función para extraer los flags TCP correctamente
@@ -195,13 +197,13 @@ def process_windows(df, window_size=size_of_window):
         IGMP=('IGMP', 'mean'),
         IPV4=('IPV4', 'mean'),  
         LLC=('LLC', 'mean'),  # Ajustar si hay identificador específico para LLC
-        IAT=('frame.time', lambda x: (x.diff().mean()).total_seconds()),  # Intervalo medio entre el paquete actual y el anterior
+        IAT=('frame.time_epoch', lambda x: (x.diff().mean()).total_seconds()),  # Intervalo medio entre el paquete actual y el anterior
         Tot_size=('frame.len', 'mean'),
         tcp_analysis_initial_rtt =('tcp_analysis_initial_rtt', 'mean'),
         tcp_connection_fin =('tcp_connection_fin', 'mean'),
         tcp_connection_syn =('tcp_connection_syn', 'mean'),
         tcp_flags_cwr =('tcp_flags_cwr', 'mean'),
-        tcp_flags_ecn =('tcp_flags_ecn', 'mean'),
+        tcp_flags_ece =('tcp_flags_ece', 'mean'),
         tcp_urgent_pointer =('TCP_Urgent_Pointer', 'mean'),
         ip_frag_offset =('IP_Frag_Offset', 'mean'),
         eth_src_not_group =('ETH_Src_Not_Group', 'mean'),
@@ -242,7 +244,7 @@ def process_flows(df, window_size=size_of_window):
             src_ip, dst_ip = row['ip.src'], row['ip.dst']
             src_port, dst_port = row.get('tcp.srcport', 0), row.get('tcp.dstport', 0)
             flow = tuple(sorted([(src_ip, src_port), (dst_ip, dst_port)]))
-            flow_data = {'byte_count': row['frame.len'], 'ts': pd.to_datetime(row['frame.time']), 'window': row['Window'], 'tcp_flags': row['tcp.flags'], 'header_length': header_length, 'payload_length': payload_length, 'src_ip': src_ip, 'dst_ip': dst_ip }
+            flow_data = {'byte_count': row['frame.len'], 'ts': pd.to_datetime(row['frame.time_epoch']), 'window': row['Window'], 'tcp_flags': row['tcp.flags'], 'header_length': header_length, 'payload_length': payload_length, 'src_ip': src_ip, 'dst_ip': dst_ip }
 
             if flow in window_flows[window]:
                 window_flows[window][flow].append(flow_data)
@@ -427,8 +429,8 @@ def extract_tcp_flags(flag_value):
         #print(f"Error al procesar los flags")
         return { 'fin': False, 'syn': False, 'rst': False, 'ack': False }
 
-# 4. Procesar el pcap y guardar resultados según el modo seleccionado
-def process_pcap(pcap_file, output_csv, output_stats, output_flow_stats, output_combined_stats, modo):
+# 4. Procesar el pcap y guardar resultados según el mode seleccionado
+def process_pcap(pcap_file, output_csv, output_stats, output_flow_stats, output_combined_stats, mode):
     run_tshark(pcap_file, output_csv)
     #df = pd.read_csv(output_csv, low_memory=False)
     chunksize = 200_000  # Ajustad según vuestra RAM, podéis probar 50_000 si sigue fallando
@@ -438,36 +440,36 @@ def process_pcap(pcap_file, output_csv, output_stats, output_flow_stats, output_
         chunks.append(chunk)
 
     df = pd.concat(chunks, ignore_index=True)
-    if modo in ["paquetes", "all"]:
+    if mode in ["paquetes", "all"]:
         # Guardar el CSV de paquetes tal cual
         df.to_csv(output_csv, index=False)
 
         print(f"Archivo de paquetes guardado en {output_csv}")
 
-    if modo in ["combinada", "flujos", "ventana", "all"]:
+    if mode in ["combinada", "flujos", "ventana", "all"]:
         first_chunk_ven = True
         first_chunk_Comb = True
         first_chunk_fluj = True
         for chunk in pd.read_csv(output_csv, chunksize=200_000, low_memory=False):
-            if modo in ["combinada", "flujos", "all"]:
+            if mode in ["combinada", "flujos", "all"]:
                 # Calcular estadísticas de flujos y agregarlas por ventana
                 stats_flow = process_flows(chunk, window_size=size_of_window)
-                if modo in ["flujos", "all"]:
+                if mode in ["flujos", "all"]:
                     # Guardar estadísticas de flows
                     stats_flow.to_csv(output_flow_stats, mode='w' if first_chunk_fluj else 'a', index=False, header=first_chunk_fluj)
                     first_chunk_fluj = False
-                if modo in ["combinada", "all"]:
+                if mode in ["combinada", "all"]:
                     stats_window_avg_df = stats_flow.groupby('Window', as_index=False).mean(numeric_only=True)
-            if modo in ["combinada", "ventana", "all"]:
+            if mode in ["combinada", "ventana", "all"]:
                 # Calcular estadísticas por ventana
                 stats_window = process_windows(chunk, window_size=size_of_window)
-                if modo in ["ventana", "all"]:
+                if mode in ["ventana", "all"]:
                     stats_window.to_csv(output_stats, mode='w' if first_chunk_ven else 'a', index=False, header=first_chunk_ven)
                     first_chunk_ven = False
-                if modo in ["combinada", "all"]:
+                if mode in ["combinada", "all"]:
                     # Combinar ambas estadísticas por 'Window'
                     combined_stats = stats_window.merge(stats_window_avg_df, on='Window', how='left')
-            if modo in ["combinada", "all"]:
+            if mode in ["combinada", "all"]:
                 # Guardar al CSV
                 combined_stats.to_csv(output_combined_stats, mode='w' if first_chunk_Comb else 'a',index=False, header=first_chunk_Comb)
                 first_chunk_Comb = False
@@ -476,12 +478,12 @@ def process_pcap(pcap_file, output_csv, output_stats, output_flow_stats, output_
         print(f"Estadísticas por flujo guardadas en {output_flow_stats}")
         print(f"Estadísticas combinadas guardadas en {output_combined_stats}")
 
-process_pcap(pcap_file, output_csv, output_stats, output_flow_stats, output_combined_stats, modo)
+process_pcap(pcap_file, output_csv, output_stats, output_flow_stats, output_combined_stats, mode)
 
 
 
 """
-    if modo in ["ventana", "all"]:
+    if mode in ["ventana", "all"]:
         first_chunk = True
         for chunk in pd.read_csv(output_csv, chunksize=100_000, low_memory=False):
             stats = process_windows(chunk, window_size=size_of_window)
@@ -491,7 +493,7 @@ process_pcap(pcap_file, output_csv, output_stats, output_flow_stats, output_comb
         print(f"Estadísticas por ventana guardadas en {output_stats}")
 
 
-    if modo in ["flujos", "all"]:
+    if mode in ["flujos", "all"]:
         first_chunk = True
         for chunk in pd.read_csv(output_csv, chunksize=100_000, low_memory=False):
             # Procesar flows por chunk (reinicia cada vez)
