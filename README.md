@@ -19,7 +19,7 @@ This repository is intended for researchers working on Intrusion Detection Syste
 ### General Requirements
 
 - Python 3.8+
-- `tshark` (CLI de Wireshark)
+- `tshark` version 4.0.0 (Wireshark CLI)
 - `nPrint` compilation (modified for ARP support)
 
 ### Installing Dependencies
