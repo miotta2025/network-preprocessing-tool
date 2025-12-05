@@ -1,93 +1,95 @@
 # MIOTTA-NPT: Network Traffic Analysis Tool for IoMT and IoT Research
 
-## 🔍 Descripción general
+![MIOTTA-NPT Tool Overview](workflow.png)
 
-**MIOTTA-NPT** es una herramienta de preprocesamiento de tráfico de red diseñada para facilitar el análisis de archivos `.pcap`. Permite extraer estadísticas en formato `.csv` a partir de:
-- Métricas por paquetes individuales
-- Agrupación por **ventanas** de tamaño configurable
-- Agrupación por **flujos** (TCP/UDP)
-- Representaciones en **crudo de paquetes** usando el estándar [nPrint](https://github.com/nprint/nprint)
+## 🔍 Overview
 
-Este repositorio está pensado para investigadores que trabajan en la detección de intrusiones (IDS), aprendizaje automático en redes, y análisis de tráfico en entornos **IoT/IoMT**.
+**MIOTTA-NPT** MIOTTA-NPT is a network traffic preprocessing tool designed to streamline the analysis of `.pcap` files. It allows for the extraction of statistics in `.csv` format based on:
+- Individual packet metrics
+- Grouping by **windows** of configurable size
+- Grouping by **flows** (TCP/UDP)
+- **Raw packet** representations using the [nPrint](https://github.com/nprint/nprint) standard
+
+This repository is intended for researchers working on Intrusion Detection Systems (IDS), network machine learning, and traffic analysis in **IoT/IoMT** environments.
 
 ---
 
-## ⚙️ Instalación
+## ⚙️ Installation
 
-### Requisitos generales
+### General Requirements
 
 - Python 3.8+
 - `tshark` (CLI de Wireshark)
-- Compilación de `nPrint` (modificado para soporte ARP)
+- `nPrint` compilation (modified for ARP support)
 
-### Instalación de dependencias
+### Installing Dependencies
 
 ```bash
 pip install -r requirements.txt
 
 ```
 
-### Compilar nPrint (una vez)
+### Compiling nPrint (Run Once)
 
 ```bash
 cd nprint
 make
 ```
 
-## 🚀 Ejecución rápida
+## 🚀 Quick Start
 
 ```bash
-python3 miotta_npt.py archivo.pcap --config config/example_config.yaml
+python3 miotta_npt.py file1.pcap file2.pcap --config config/example_config.yaml
 ```
 
-## 🛠️ Archivo de configuración YAML
+## 🛠️ YAML Configuration File
 
-Ejemplo básico (`config/example_config.yaml`):
+Basic example (`config/example_config.yaml`):
 
 ```yaml
-mode: "nprint"              # o "classic"
+mode: "nprint"              # or "classic"
 output_dir: "./output"
 
 classic:
-  mode: all                 # Tipo de análisis (paquetes, ventanas, flujos, combinada, all)
-  size_of_window: 10        # Número de paquetes por ventana
+  mode: all                 # Analysis type (packets, windows, flows, combined, all)
+  size_of_window: 10        # Number of packets per window
 
 nprint:
-  headers: [ethernet, ipv4, ipv6, absolute_time, icmp, tcp, udp, relative_time, arp]    # Headers de los protocolos incluidos en el output
-  masks: [ethernet, arp, ipv4, ipv6, tcp, udp, ip, icmp]                                # Headers de los cuales eliminar información de localización
+  headers: [ethernet, ipv4, ipv6, absolute_time, icmp, tcp, udp, relative_time, arp]    # Protocol headers included in the output
+  masks: [ethernet, arp, ipv4, ipv6, tcp, udp, ip, icmp]                                # Headers from which to remove location information
 ```
 
-## 📂 Salidas generadas
+## 📂 Generated Outputs
 
-Según el método, se generan CSVs en la carpeta `output/`.
+Depending on the method selected, CSV files are generated in the `output/` directory.
 
-### Estadístico (`preprocessing_tool.py`)
-- `paquetes_*.csv`: tráfico completo
-- `estadisticas_ventanas_*.csv`: agrupación por ventanas
-- `estadisticas_flujo_*.csv`: agrupación por flujo
-- `estadisticas_combinadas_*.csv`: combinación de ambos
+### Statistical Analysis (`preprocessing_tool.py`)
+- `paquetes_*.csv`: complete network traffic
+- `estadisticas_ventanas_*.csv`: grouped by windows
+- `estadisticas_flujo_*.csv`: grouped by flow
+- `estadisticas_combinadas_*.csv`: combination of both (windows and flows)
 
-### nPrint (`preprocessing_tool_nprint.py`)
-- `nprint_output.csv`: representación cruda de cabeceras binarias
+### nPrint Analysis (`preprocessing_tool_nprint.py`)
+- `nprint_output.csv`: raw representation of binary headers
 
-## 📁 Estructura del repositorio
+## 📁 Repository Structure
 
 ```bash
 miotta-npt/
-├── miotta_npt.py                 # Script principal
-├── preprocessing_tool.py         # Procesamiento estadístico
-├── preprocessing_tool_nprint.py  # Procesamiento con nPrint
+├── miotta_npt.py                 # Main script
+├── preprocessing_tool.py         # Statistical processing
+├── preprocessing_tool_nprint.py  # Processing with nPrint
 ├── config/
 │   └── example_config.yaml
 ├── output/
 ├── nprint/
-│   └── (fuentes + Makefile)
+│   └── (sources + Makefile)
 ├── requirements.txt
 └── README.md
 ```
 
-## 📜 Licencia
+## 📜 License
 
-Este proyecto puede utilizarse bajo la licencia MIT.
+This project is available for use under the MIT License.
 
 
