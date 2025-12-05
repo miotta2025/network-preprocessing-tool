@@ -53,22 +53,23 @@ def run_nprint(config, pcap):
 
 def main():
     parser = argparse.ArgumentParser(description="Unified preprocessor for IoMT traffic")
-    parser.add_argument("pcap_file", type=str, help="Path to the input PCAP file")
+    parser.add_argument("pcap_files", type=str, nargs='+', help="Paths to the input PCAP files")
     parser.add_argument('--config', required=True, help="Path to YAML configuration file")
     args = parser.parse_args()
 
     config = load_config(args.config)
-    pcap_file = args.pcap_file
     mode = config["mode"]
 
     os.makedirs(config["output_dir"], exist_ok=True)
 
-    if mode == "classic":
-        run_classic(config, pcap_file)
-    elif mode == "nprint":
-        run_nprint(config, pcap_file)
-    else:
-        raise ValueError(f"Unsupported mode: {mode}")
+    for pcap_file in args.pcap_files:
+        print(f"Processing file: {pcap_file}")
+        if mode == "classic":
+            run_classic(config, pcap_file)
+        elif mode == "nprint":
+            run_nprint(config, pcap_file)
+        else:
+            raise ValueError(f"Unsupported mode: {mode}")
 
 if __name__ == "__main__":
     main()
