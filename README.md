@@ -4,7 +4,7 @@
 
 ## 🔍 Overview
 
-**MIOTTA-NPT** MIOTTA-NPT is a network traffic preprocessing tool designed to streamline the analysis of `.pcap` files. It allows for the extraction of statistics in `.csv` format based on:
+**MIOTTA-NPT** is a network traffic preprocessing tool designed to streamline the analysis of `.pcap` files. It allows for the extraction of statistics in `.csv` format based on:
 - Individual packet metrics
 - Grouping by **windows** of configurable size
 - Grouping by **flows** (TCP/UDP)
