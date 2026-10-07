@@ -9,6 +9,7 @@
 #define FILE_PARSER
 
 #include <algorithm>
+#include <cstdint>
 #include <arpa/inet.h>
 #include <map>
 #include <string>
