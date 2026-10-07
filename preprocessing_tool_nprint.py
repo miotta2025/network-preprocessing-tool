@@ -158,7 +158,8 @@ class INprinter(ABC):
         
         self._options = {}
         self._target_file = None
-        self._executable = './nprint/nprint'
+        # nPrint binary next to this script, so the tool works from any working directory
+        self._executable = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nprint', 'nprint')
         self._header_to_flag = {
             'ethernet':'-e',
             'ipv4':'-4',
@@ -590,6 +591,13 @@ if __name__ == '__main__':
         choices= ['ethernet', 'arp', 'ipv4', 'ipv6', 'tcp', 'udp', 'ip', 'icmp']
     )
 
+    parser.add_argument(
+        '--output_csv',
+        type=str,
+        default=None,
+        help='path of the output CSV (default: <pcap_file>.csv)'
+    )
+
     args = parser.parse_args()
 
     exectuion_configuration = SinglePcapConfigTemplate(
@@ -597,7 +605,7 @@ if __name__ == '__main__':
         'prefix_delete',
         args.masks,
         args.pcap_file,
-        args.pcap_file + '.csv',
+        args.output_csv or args.pcap_file + '.csv',
         number_of_packets(args.pcap_file)
     )
 
