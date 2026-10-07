@@ -3,8 +3,10 @@ import sys
 import yaml
 import argparse
 import subprocess
-import shutil
-from datetime import datetime
+
+# Folder of this script: the helper scripts and the nPrint binary are found from here,
+# so the tool can be launched from any working directory.
+TOOL_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def load_config(yaml_path):
     with open(yaml_path, 'r') as f:
@@ -17,19 +19,15 @@ def run_classic(config, pcap):
 
     cmd = [
         sys.executable,  # Use the current Python interpreter
-        "preprocessing_tool.py",
+        os.path.join(TOOL_DIR, "preprocessing_tool.py"),
         pcap,
         "--size_of_window", str(size),
-        "--mode", mode
+        "--mode", mode,
+        "--output_dir", output_dir  # results are written there directly
     ]
 
     print(f"Running Classic Preprocessing: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
-
-    # Mover resultados al directorio de salida
-    for f in os.listdir("."):
-        if f.endswith(".csv") and os.path.isfile(f):
-            shutil.move(f, os.path.join(output_dir, f))
 
 def run_nprint(config, pcap):
     output_dir = config["output_dir"]
@@ -38,18 +36,15 @@ def run_nprint(config, pcap):
 
     cmd = [
         sys.executable,  # Use the current Python interpreter
-        "preprocessing_tool_nprint.py",
+        os.path.join(TOOL_DIR, "preprocessing_tool_nprint.py"),
         pcap,
         "--headers"
-    ] + headers + ["--masks"] + masks
+    ] + headers + ["--masks"] + masks + [
+        "--output_csv", os.path.join(output_dir, os.path.basename(pcap) + ".csv")
+    ]
 
     print(f"Running nPrint Preprocessing: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
-
-    # Mover resultado a carpeta de salida
-    csv_file = f"{pcap}.csv"
-    if os.path.exists(csv_file):
-        shutil.move(csv_file, os.path.join(output_dir, os.path.basename(csv_file)))
 
 def main():
     parser = argparse.ArgumentParser(description="Unified preprocessor for IoMT traffic")

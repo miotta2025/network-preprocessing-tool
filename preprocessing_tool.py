@@ -15,13 +15,14 @@ parser.add_argument("pcap_file", type=str, help="Ruta del archivo pcap a analiza
 parser.add_argument("--size_of_window", type=int, default=10, help="Tamaño de la ventana en paquetes (por defecto: 10)")
 parser.add_argument("--mode", type=str, choices=["combinada", "paquetes", "ventana", "flujos", "all"],
                     default="all", help="mode de análisis (combinada, paquetes, ventana, flujos, all). Por defecto: all")
+parser.add_argument("--output_dir", type=str, default=".",
+                    help="Carpeta donde se escriben los CSV (por defecto: la carpeta actual)")
 
 
 # Parsear los argumentos
 args = parser.parse_args()
 
 # Definir variables
-host = '192.168.137.250'
 size_of_window = args.size_of_window
 mode = args.mode
 pcap_file = args.pcap_file
@@ -34,10 +35,11 @@ pcap_file = args.pcap_file
 output_base_name = os.path.basename(pcap_file).replace(".pcap", "")
 
 # Generar nombres personalizados para los otros CSVs
-output_csv = f"paquetes_{output_base_name}.csv"
-output_stats = f"estadisticas_ventanas_{output_base_name}.csv"
-output_flow_stats = f"estadisticas_flujo_{output_base_name}.csv"
-output_combined_stats = f"estadisticas_combinadas_{output_base_name}.csv"
+os.makedirs(args.output_dir, exist_ok=True)
+output_csv = os.path.join(args.output_dir, f"paquetes_{output_base_name}.csv")
+output_stats = os.path.join(args.output_dir, f"estadisticas_ventanas_{output_base_name}.csv")
+output_flow_stats = os.path.join(args.output_dir, f"estadisticas_flujo_{output_base_name}.csv")
+output_combined_stats = os.path.join(args.output_dir, f"estadisticas_combinadas_{output_base_name}.csv")
 
 # Nueva gestión de flujos usando un diccionario
 flows = {}

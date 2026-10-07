@@ -1,0 +1,10 @@
+# Configuration used to extract the features of the published datasets
+# (CICIoMT2024 and IoMT-TrafficData, unified dataset DOI 10.34810/DATA3305; HospNet26, DOI 10.34810/DATA3050).
+# Output: estadisticas_combinadas_<pcap>.csv = window statistics + flow statistics averaged per window
+# (one row per window of 100 consecutive packets), plus the packet-level table paquetes_<pcap>.csv.
+mode: "classic"
+output_dir: "./output"
+
+classic:
+  mode: combinada        # paquetes, ventana, flujos, combinada, all
+  size_of_window: 100    # packets per window

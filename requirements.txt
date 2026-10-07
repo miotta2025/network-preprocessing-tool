@@ -1,4 +1,4 @@
-pandas>=1.1.0
+pandas>=1.1.0,<3  # pandas 3 changes string dtypes and breaks preprocessing_tool.py
 numpy>=1.18.0
 scipy>=1.5.0
 dpkt>=1.9.7.2
