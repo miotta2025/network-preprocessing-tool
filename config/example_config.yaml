@@ -2,7 +2,7 @@ mode: "nprint"              # "nprint" o "classic"
 output_dir: "./output"
 
 classic:
-  mode: all      # Tipo de análisis (paquetes, ventanas, flujos, combinada, all)
+  mode: all      # Tipo de análisis (paquetes, ventana, flujos, combinada, all)
   size_of_window: 10     # Número de paquetes por ventana
 
 nprint:
